@@ -3,7 +3,10 @@
 Markdown for receipts. Printable digital receipts. &#x1f9fe;  
 Generate receipt printer commands and SVG images.  
 
-[ReceiptIO](https://github.com/receiptline/receiptio) - Simple and easy API and CLI using receiptline, supporting printer status.  
+"ReceiptLine" is a coined word from "Receipt" and "Streamline".  
+Make it more efficient by making it simpler!  
+
+[ReceiptIO](https://www.npmjs.com/package/receiptio) - Simple and easy API and CLI using receiptline, supporting printer status.  
 
 ![English](screenshot_en.png)  
 ![Japanese](screenshot_ja.png)  
@@ -27,6 +30,8 @@ This reference implementation also provides the development tool "ReceiptLine De
 - Star MC series
 - Citizen CT series
 - Fujitsu FP series
+
+Epson TM series (South Asia model) and Star MC series (StarPRNT model) can print with device font of Thai characters.  
 
 ![Printers](readme_printer.jpg)  
 
@@ -65,7 +70,7 @@ const svg = receiptline.transform(doc, display);
 
 ## Method
 
-`receiptline.transform(doc, printer)`  
+`receiptline.transform(doc[, printer])`  
 
 ### Parameters
 
@@ -100,6 +105,7 @@ const svg = receiptline.transform(doc, display);
   - `ksc5601`: Korean
   - `cp950`: Traditional Chinese
   - `big5`: Traditional Chinese
+  - `tis620`: Thai
 - `gradient` (for printer)
   - `false`: image processing for text, barcodes, and 2D codes
   - `true`: image processing for photos (default)
@@ -124,7 +130,7 @@ const svg = receiptline.transform(doc, display);
   - `fit`: ESC/POS (Fujitsu)
   - `impact`: ESC/POS (TM-U220)
   - `impactb`: ESC/POS (TM-U220 Font B)
-  - `starsbcs`: StarPRNT (SBCS)
+  - `starsbcs`: StarPRNT (SBCS, Thai)
   - `starmbcs`: StarPRNT (Japanese)
   - `starmbcs2`: StarPRNT (Chinese, Korean)
   - `starlinesbcs`: Star Line Mode (SBCS)
@@ -134,6 +140,34 @@ const svg = receiptline.transform(doc, display);
   - `emustarlinembcs`: Command Emulator Star Line Mode (Japanese)
   - `emustarlinembcs2`: Command Emulator Star Line Mode (Chinsese, Korean)
   - `stargraphic`: Star Graphic Mode (TSP100LAN)
+
+# Transform stream API
+
+`receiptline.createTransform()` method is the stream version of the `receiptline.transform()`.  
+
+```javascript
+const fs = require('fs');
+const receiptline = require('receiptline');
+
+const source = fs.createReadStream('example.txt');
+const transform = receiptline.createTransform({ command: 'svg' });
+const destination = fs.createWriteStream('example.svg');
+
+source.pipe(transform).pipe(destination);
+```
+
+## Method
+
+`receiptline.createTransform([printer])`  
+
+### Parameters
+
+- `printer`
+  - an object of printer configuration
+
+### Return value
+
+- Transform stream &lt;stream.Transform&gt;
 
 # Examples
 
@@ -191,11 +225,17 @@ The ReceiptLine Designer provides more features.
 
 ## Setup
 
+1. Copy the following files to your working directory
+
+    - designer/*
+    - designer.js
+    - printers.json
+    - servers.json
+
 1. Start the server
 
     ```bash
-    $ cd node_modules/receiptline
-    $ npm start
+    $ node designer.js
     ```
 
 1. Open http://localhost:8080
@@ -210,7 +250,7 @@ The ReceiptLine Designer provides more features.
         "port": 19100,
         "asImage": false,
         "cpl": 48,
-        "encoding": "cp932",
+        "encoding": "shiftjis",
         "gradient": true,
         "gamma": 1.8,
         "threshold": 128,
@@ -229,11 +269,9 @@ The ReceiptLine Designer provides more features.
       - printer port (will be `9100`)
     - `asImage`
       - `false`: print with device font (default)
-      - `true`: print as image (Requires [convert-svg-to-png](https://www.npmjs.com/package/convert-svg-to-png))
+      - `true`: print as image (Requires [puppeteer](https://www.npmjs.com/package/puppeteer) or [sharp](https://www.npmjs.com/package/sharp))
     - `cpl`, `encoding`, `gradient`, `gamma`, `threshold`, `upsideDown`, `spacing`, `cutting`, `command`
       - see the printer configuration above
-
-    *Please back up this json file as it will be initialized by updating the package.*  
 
 # Serial-LAN Converter
 
@@ -245,7 +283,6 @@ The serial-LAN converter enables test printing to USB / Bluetooth printers that 
 
     ```bash
     $ npm install serialport
-    $ cd node_modules/receiptline
     ```
 
 1. Configure servers.json
@@ -267,12 +304,10 @@ The serial-LAN converter enables test printing to USB / Bluetooth printers that 
     - `device`
       - the system path of the serial port
 
-    *Please back up this json file as it will be initialized by updating the package.*  
-
 1. Restart the server
 
     ```bash
-    $ npm start
+    $ node designer.js
     ```
 
 # Syntax
@@ -488,6 +523,7 @@ Escape special characters.
   - Image position and size ratio
   - Barcodes and 2D codes
 - Star Graphic Mode printing only supports images, line feeds, and paper cuts.
+- [sharp](https://www.npmjs.com/package/sharp) is not support web fonts and minimizes the area of "invert" character decoration.
 
 # Author
 
